@@ -60,6 +60,14 @@ func TestIAMPasswordPolicyCheck(t *testing.T) {
 }
 
 func TestAccAWSUserLoginProfile_basic(t *testing.T) {
+	testAccAWSUserLoginProfile_pgpKey(t, testPubKey1, testPrivKey1)
+}
+
+func TestAccAWSUserLoginProfile_ed25519(t *testing.T) {
+	testAccAWSUserLoginProfile_pgpKey(t, testEccPubKey1, testEccPrivKey1)
+}
+
+func testAccAWSUserLoginProfile_pgpKey(t *testing.T, publicKey string, privateKey string) {
 	var conf iam.GetLoginProfileOutput
 
 	username := fmt.Sprintf("test-user-%d", acctest.RandInt())
@@ -70,15 +78,15 @@ func TestAccAWSUserLoginProfile_basic(t *testing.T) {
 		CheckDestroy: testAccCheckAWSUserLoginProfileDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAWSUserLoginProfileConfig_Required(username, "/", testPubKey1),
+				Config: testAccAWSUserLoginProfileConfig_Required(username, "/", publicKey),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAWSUserLoginProfileExists("aws_iam_user_login_profile.user", &conf),
-					testDecryptPasswordAndTest("aws_iam_user_login_profile.user", "aws_iam_access_key.user", testPrivKey1),
+					testDecryptPasswordAndTest("aws_iam_user_login_profile.user", "aws_iam_access_key.user", privateKey),
 					resource.TestCheckResourceAttrSet("aws_iam_user_login_profile.user", "encrypted_password"),
 					resource.TestCheckResourceAttrSet("aws_iam_user_login_profile.user", "key_fingerprint"),
 					resource.TestCheckResourceAttr("aws_iam_user_login_profile.user", "password_length", "20"),
 					resource.TestCheckResourceAttr("aws_iam_user_login_profile.user", "password_reset_required", "true"),
-					resource.TestCheckResourceAttr("aws_iam_user_login_profile.user", "pgp_key", testPubKey1+"\n"),
+					resource.TestCheckResourceAttr("aws_iam_user_login_profile.user", "pgp_key", publicKey+"\n"),
 				),
 			},
 			{
@@ -455,3 +463,22 @@ G/om78UjQqyVACRZqqAGmuPq+TSkRUCpt9h+A39LQWkojHqyob3cyLgy6z9Q557O9uK3lQozbw2g
 H9zC0RqnePl+rsWIUU/ga16fH6pWc1uJiEBt8UZGypQ/E56/343epmYAe0a87sHx8iDV+dNtDVKf
 PRENiLOOc19MmS+phmUyrbHqI91c0pmysYcJZCD3a502X1gpjFbPZcRtiTmGnUKdOIu60YPNE4+h
 7u2CfYyFPu3AlUaGNMBlvy6PEpU=`
+
+const testEccPubKey1 = `mDMEX96DjxYJKwYBBAHaRw8BAQdAW9LdXOTF3mTT8CZ43P+Ed
+SnG2NVzfYuRcF5K2hiOn+C0KlRlcnJhZm9ybSBFQ0MgVGVzdCA8dGVycmFmb3JtQGV4YW1wbGUuY
+29tPoiQBBMWCAA4FiEEGohJ8/fWlldcX8b8xW9xd9ehprgFAl/eg48CGwEFCwkIBwIGFQoJCAsCB
+BYCAwECHgECF4AACgkQxW9xd9ehprj2KQEA2wx8UEdgYVNQINh0cV5YYz0KSVw6QL3jvn6+ITezH
+twA/1Hrksyi6jP2hKXb8TivJl/loCnB5lnnKWWIE40yQXgCuDgEX96D7hIKKwYBBAGXVQEFAQEHQ
+P8ZqDMGKQW+x64cBgMLvSXCzcznYNkvl9xzmX7B3HgVAwEIB4h4BBgWCAAgFiEEGohJ8/fWlldcX
+8b8xW9xd9ehprgFAl/eg+4CGwwACgkQxW9xd9ehprj2pQD/bKObVPrtL27GXf/5etvUjzDqL08DE
+KDSoef84/0bnOIA/io9xPu+c4azb+aALwYvB2iXb6rQlyT8dV6rIxhO50EG`
+
+const testEccPrivKey1 = `lDsEX96DjxYJKwYBBAHaRw8BAQdAW9LdXOTF3mTT8CZ43P+EdSn
+G2NVzfYuRcF5K2hiOn+D/AGUAR05VAbQqVGVycmFmb3JtIEVDQyBUZXN0IDx0ZXJyYWZvcm1AZXh
+hbXBsZS5jb20+iJAEExYIADgWIQQaiEnz99aWV1xfxvzFb3F316GmuAUCX96DjwIbAQULCQgHAgY
+VCgkICwIEFgIDAQIeAQIXgAAKCRDFb3F316GmuPYpAQDbDHxQR2BhU1Ag2HRxXlhjPQpJXDpAveO
++fr4hN7Me3AD/UeuSzKLqM/aEpdvxOK8mX+WgKcHmWecpZYgTjTJBeAKcXQRf3oPuEgorBgEEAZd
+VAQUBAQdA/xmoMwYpBb7HrhwGAwu9JcLNzOdg2S+X3HOZfsHceBUDAQgHAAD/YzqoyQIDqVV1diN
+ivT+810ut0OnXChOtIc0YmxlKPogPK4h4BBgWCAAgFiEEGohJ8/fWlldcX8b8xW9xd9ehprgFAl/
+eg+4CGwwACgkQxW9xd9ehprj2pQD/bKObVPrtL27GXf/5etvUjzDqL08DEKDSoef84/0bnOIA/io
+9xPu+c4azb+aALwYvB2iXb6rQlyT8dV6rIxhO50EG`
